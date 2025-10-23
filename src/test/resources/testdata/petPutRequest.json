@@ -1,0 +1,18 @@
+{
+  "id": 9223372036854748000,
+  "category": {
+    "id": 0,
+    "name": "string"
+  },
+  "name": "nameForPet",
+  "photoUrls": [
+    "string"
+  ],
+  "tags": [
+    {
+      "id": 0,
+      "name": "string"
+    }
+  ],
+  "status": "sold"
+}

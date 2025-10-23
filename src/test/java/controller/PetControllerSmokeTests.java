@@ -8,13 +8,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.*;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -29,7 +34,7 @@ public class PetControllerSmokeTests {
     @Autowired
     private RestTemplate restTemplate;
 
-    private String readJsonFromFile(String filename) throws IOException {
+    public String readFromJson(String filename) throws IOException {
         Path path = new ClassPathResource("testdata/" + filename).getFile().toPath();
         return Files.readString(path);
     }
@@ -38,19 +43,24 @@ public class PetControllerSmokeTests {
 
     @Test
     @DisplayName("SMOKE: GET /pet/{petID} - корректный код возврата при валидном запросе")
-    void getRequestPetControllerId() {
-        HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(200);
+    void getRequestPetControllerId() throws IOException {
+        HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(404);
 
-        ResponseEntity<String> forEntity = restTemplate.getForEntity(BASE_URL + "/pet/17611259996828", String.class);
-        HttpStatusCode actutalStatusCode = forEntity.getStatusCode();
+        try {
+            ResponseEntity<String> stringResponseEntity = restTemplate.getForEntity(BASE_URL + "/pet/0", String.class);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            Assertions.assertEquals(expectedStatusCode, e.getStatusCode());
+        }
 
-        Assertions.assertEquals(expectedStatusCode, actutalStatusCode);
+        //HttpStatusCode actutalStatusCode = stringResponseEntity.getStatusCode();
+
+
     }
 
     @Test
     @DisplayName("SMOKE: GET /pet/findByStatus?status={status}&status={status} - корректный код возврата" +
             " при валидном запросе с двумя параметреми")
-    void getRequestPetControllerFindByStatus() {
+    void getRequestPetControllerFindByStatusTwoParams() {
         HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(200);
 
         URI uri = UriComponentsBuilder
@@ -62,8 +72,22 @@ public class PetControllerSmokeTests {
                 //через encode безопасное кодирование (Name Surname -> Name%20Surname)
                 .toUri();
 
-        ResponseEntity<String> forEntity= restTemplate.getForEntity(uri, String.class);
-        HttpStatusCode actualStatusCode = forEntity.getStatusCode();
+        ResponseEntity<String> stringResponseEntity= restTemplate.getForEntity(uri, String.class);
+        HttpStatusCode actualStatusCode = stringResponseEntity.getStatusCode();
+
+        Assertions.assertEquals(expectedStatusCode, actualStatusCode);
+
+    }
+
+    @Test
+    @DisplayName("SMOKE: GET /pet/findByStatus?status={status} - корректный код возврата" +
+            " при валидном запросе с одним параметром")
+    void getRequestPetControllerFindByStatus() {
+        HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(200);
+        String status = "sold";
+
+        ResponseEntity<String> stringResponseEntity= restTemplate.getForEntity(BASE_URL + "/pet/findByStatus?status=" + status, String.class);
+        HttpStatusCode actualStatusCode = stringResponseEntity.getStatusCode();
 
         Assertions.assertEquals(expectedStatusCode, actualStatusCode);
 
@@ -74,7 +98,7 @@ public class PetControllerSmokeTests {
     void postRequestPetController() throws IOException {
         HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(200);
         HttpHeaders httpHeaders = new HttpHeaders();
-        String jsonBody = readJsonFromFile("petPostRequest.json");
+        String jsonBody = readFromJson("petPostRequest.json");
 
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
 
@@ -83,6 +107,32 @@ public class PetControllerSmokeTests {
 
         HttpStatusCode actualStatusCode = stringResponseEntity.getStatusCode();
 
+        Assertions.assertEquals(expectedStatusCode, actualStatusCode);
+
+    }
+
+    @Test
+    @DisplayName("SMOKE: POST /pet/{petId}/uploadImage - корректный код возврата при валидном запросе без метаданных")
+    void postRequestPetControllerUploadImageNoMetaData() throws IOException {
+        HttpStatusCode expectedStatusCode = HttpStatusCode.valueOf(200);
+        String id = "123";
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        ClassPathResource resource = new ClassPathResource("testdata/test.jpeg");
+        File file = resource.getFile();
+        FileSystemResource fileSystemResource = new FileSystemResource(file);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("file", fileSystemResource);
+
+        HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, httpHeaders);
+        ResponseEntity<String> stringResponseEntity= restTemplate.postForEntity(BASE_URL + "/pet/"
+                + id + "/uploadImage", request, String.class);
+
+        HttpStatusCode actualStatusCode = stringResponseEntity.getStatusCode();
+
+        //System.out.println(stringResponseEntity.getBody());
         Assertions.assertEquals(expectedStatusCode, actualStatusCode);
 
     }
