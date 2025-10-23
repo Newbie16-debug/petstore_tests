@@ -73,8 +73,8 @@ public class PetControllerRegressTests {
     }
 
     @Test
-    @DisplayName("REGRESS: DELETE /pet - валидный запрос должен возвращать тело с " +
-            "соответствующими значениями полей name и status ")
+    @DisplayName("REGRESS: DELETE /pet/{petId} - валидный запрос должен возвращать тело с " +
+            "соответствующим значением message = petId ")
     void deleteRequestFilmsController() throws IOException {
         String json_string_request = readFromJson("petPostRequestTest.json");
 //        String expectedName = "nameForPet";
