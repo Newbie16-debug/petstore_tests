@@ -9,14 +9,18 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class TestsConfigurations {
 
-    @Bean
-    public RestClient restClient() {return RestClient.create(); }
+  @Bean
+  public RestClient restClient() {
+    return RestClient.create();
+  }
 
-    @Bean
-    public RestTemplate restTemplate() {return new RestTemplate(); }
+  @Bean
+  public RestTemplate restTemplate() {
+    return new RestTemplate();
+  }
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
+  @Bean
+  public ObjectMapper objectMapper() {
+    return new ObjectMapper();
+  }
 }
